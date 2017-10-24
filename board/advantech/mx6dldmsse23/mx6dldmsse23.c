@@ -1093,6 +1093,7 @@ void board_fastboot_setup(void)
 	    if (!getenv("bootcmd"))
 			setenv("bootcmd", "boota mmc0");
 	    break;
+	case SPI_NOR_BOOT:
 	case SD3_BOOT:
 	case MMC3_BOOT:
 	    if (!getenv("fastboot_dev"))
@@ -1155,6 +1156,7 @@ void board_recovery_setup(void)
 			setenv("bootcmd_android_recovery",
 				"boota mmc0 recovery");
 		break;
+	case SPI_NOR_BOOT:
 	case SD3_BOOT:
 	case MMC3_BOOT:
 		if (!getenv("bootcmd_android_recovery"))
