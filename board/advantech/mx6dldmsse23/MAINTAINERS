@@ -1,0 +1,6 @@
+MX6DLDMSSE23 BOARD
+M:	Fabio Estevam <fabio.estevam@nxp.com>
+S:	Maintained
+F:	board/advantech/mx6dldmsse23/
+F:	include/configs/mx6dldmsse23.h
+F:	configs/mx6dldmsse23_defconfig
