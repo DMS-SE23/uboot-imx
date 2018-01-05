@@ -36,6 +36,14 @@
 #define CONFIG_SYS_MMC_ENV_DEV		1	/* SDHC3 */
 #define CONFIG_SYS_MMC_ENV_PART                0       /* user partition */
 
+#define CONFIG_SYS_MMC_PRIORITY_CHECK
+
+#ifdef CONFIG_SYS_MMC_PRIORITY_CHECK
+#define MMC_DEVICE_NUM_EMMC		2	/* SDHC3 */
+#define MMC_DEVICE_NUM_SD		1	/* SDHC2 */
+#define DEFAULT_FDT_FILE			"imx6dl-dmsse23.dtb"
+#endif
+
 #ifdef CONFIG_SYS_USE_SPINOR
 #define CONFIG_SF_DEFAULT_CS   0
 #endif

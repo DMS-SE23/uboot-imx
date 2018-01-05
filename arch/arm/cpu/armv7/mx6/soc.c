@@ -26,7 +26,6 @@
 #include <recovery.h>
 #endif
 
-
 enum ldo_reg {
 	LDO_ARM,
 	LDO_SOC,
@@ -601,6 +600,10 @@ static int mmc_get_boot_dev(void)
 	u32 soc_sbmr = readl(&src_regs->sbmr1);
 	u32 bootsel;
 	int devno;
+#ifdef CONFIG_SYS_MMC_PRIORITY_CHECK
+	char cmd[64] = {0};
+	int ret = 0;
+#endif
 
 	/*
 	 * Refer to
@@ -610,12 +613,44 @@ static int mmc_get_boot_dev(void)
 	 */
 	bootsel = (soc_sbmr & 0x000000FF) >> 6;
 
+	/* BOOT_CFG2[3] and BOOT_CFG2[4] */
+	devno = (soc_sbmr & 0x00001800) >> 11;
+
+#ifdef CONFIG_SYS_MMC_PRIORITY_CHECK
+	if (bootsel != 1) {
+			
+		/* Default set eMMC as the boot device of SPI-NOR boot system */
+		devno = MMC_DEVICE_NUM_EMMC;
+
+		/* check zImage from SD */
+		memset(cmd, 0, sizeof(cmd));
+		sprintf(cmd, "fatload mmc %d:1 0x12000000 zImage", board_mmc_get_env_dev(MMC_DEVICE_NUM_SD));
+		ret = run_command(cmd, 0);
+		if (ret != 0) {
+			printf("check valid zImage from SD : not exist\n");
+			goto exit;
+		}
+
+		memset(cmd, 0, sizeof(cmd));
+		sprintf(cmd, "fatload mmc %d:1 0x18000000 %s", board_mmc_get_env_dev(MMC_DEVICE_NUM_SD), DEFAULT_FDT_FILE);
+		ret = run_command(cmd, 0);
+		if (ret != 0) {
+			printf("check valid fdt file from SD : not exist\n");
+			goto exit;
+		}
+
+		devno = MMC_DEVICE_NUM_SD;
+	}
+#else
 	/* No boot from sd/mmc */
 	if (bootsel != 1)
 		return -1;
+#endif
 
-	/* BOOT_CFG2[3] and BOOT_CFG2[4] */
-	devno = (soc_sbmr & 0x00001800) >> 11;
+#ifdef CONFIG_SYS_MMC_PRIORITY_CHECK
+exit:
+	printf("mmc priority check with devno = %d\n", devno);
+#endif
 
 	return devno;
 }
