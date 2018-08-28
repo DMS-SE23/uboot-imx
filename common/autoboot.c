@@ -306,6 +306,98 @@ static void process_fdt_options(const void *blob)
 #endif /* CONFIG_OF_CONTROL && CONFIG_SYS_TEXT_BASE */
 }
 
+#ifdef CONFIG_ADV_NETBOOT
+const char *bootdelay_process(void)
+{
+	char *s;
+	int bootdelay;
+
+#define ADV_NET_BOOTCOMMAND \
+	"setenv serverip 192.168.1.112; " \
+	"setenv ipaddr 192.168.1.111; " \
+	"setenv image zImage; " \
+	"setenv fdt_file imx6dl-dmsse23.dtb; " \
+	"setenv nfsroot /home/dmsse23/rootfs; " \
+	"echo Booting from serverip:(${serverip})...; " \
+	"ping 192.168.1.112; " \
+	"ping 192.168.1.112; " \
+	"ping 192.168.1.112; " \
+	"setenv netargs 'setenv bootargs console=${console},${baudrate}  root=/dev/nfs rw  ip=192.168.1.111:192.168.1.112 nfsroot=192.168.1.112:/home/dmsse23/rootfs'; " \
+	"run netboot; "
+
+	setenv("bootcmd", ADV_NET_BOOTCOMMAND );
+	bootdelay = 1;
+
+	bootretry_init_cmd_timeout();
+	s = getenv("bootcmd");
+
+	process_fdt_options(gd->fdt_blob);
+	stored_bootdelay = bootdelay;
+
+	return s;
+}
+
+const char *emmc_boot_env(void)
+{
+	char *s;
+	int bootdelay;
+
+#define ADV_EMMC_BOOTCOMMAND \
+	"setenv root /dev/mmcblk2p2; "  \
+	"setenv mmcdev 1; " \
+	"setenv mmcpart 1; " \
+	"setenv mmcroot '/dev/mmcblk2p2 rootwait rw'; " \
+	"setenv mmcargs 'setenv bootargs console=${console},${baudrate} ${smp} root=${mmcroot}'; " \
+	"run findfdt; " \
+	"mmc rescan.; " \
+	"run loadbootscript; " \
+	"run loadfdt; " \
+	"run loadimage; " \
+	"run mmcboot; "
+
+	setenv("bootcmd", ADV_EMMC_BOOTCOMMAND );
+	bootdelay = 1;
+
+	bootretry_init_cmd_timeout();
+	s = getenv("bootcmd");
+
+	process_fdt_options(gd->fdt_blob);
+	stored_bootdelay = bootdelay;
+
+	return s;
+}
+
+const char *sd_boot_env(void)
+{
+	char *s;
+	int bootdelay;
+
+#define ADV_SD_BOOTCOMMAND \
+	"setenv root /dev/mmcblk1p2; "  \
+	"setenv mmcdev 0; " \
+	"setenv mmcpart 1; " \
+	"setenv mmcroot '/dev/mmcblk1p2 rootwait rw'; " \
+	"setenv mmcargs 'setenv bootargs console=${console},${baudrate} ${smp} root=${mmcroot}'; " \
+	"run findfdt; " \
+	"mmc rescan.; " \
+	"run loadbootscript; " \
+	"run loadfdt; " \
+	"run loadimage; " \
+	"run mmcboot; "
+
+	setenv("bootcmd", ADV_SD_BOOTCOMMAND );
+	bootdelay = 1;
+
+	bootretry_init_cmd_timeout();
+	s = getenv("bootcmd");
+
+	process_fdt_options(gd->fdt_blob);
+	stored_bootdelay = bootdelay;
+
+	return s;
+}
+#else
+
 const char *bootdelay_process(void)
 {
 	char *s;
@@ -376,18 +468,16 @@ const char *bootdelay_process(void)
 
 	return s;
 }
+#endif
 
 void autoboot_command(const char *s)
 {
 	debug("### main_loop: bootcmd=\"%s\"\n", s ? s : "<UNDEFINED>");
-
 	if (stored_bootdelay != -1 && s && !abortboot(stored_bootdelay)) {
 #if defined(CONFIG_AUTOBOOT_KEYED) && !defined(CONFIG_AUTOBOOT_KEYED_CTRLC)
 		int prev = disable_ctrlc(1);	/* disable Control C checking */
 #endif
-
 		run_command_list(s, -1, 0);
-
 #if defined(CONFIG_AUTOBOOT_KEYED) && !defined(CONFIG_AUTOBOOT_KEYED_CTRLC)
 		disable_ctrlc(prev);	/* restore Control C checking */
 #endif
@@ -400,4 +490,9 @@ void autoboot_command(const char *s)
 			run_command_list(s, -1, 0);
 	}
 #endif /* CONFIG_MENUKEY */
+
+#ifdef CONFIG_ADV_NETBOOT
+	run_command_list(sd_boot_env(), -1, 0);
+	run_command_list(emmc_boot_env(), -1, 0);
+#endif
 }

@@ -13,6 +13,12 @@ source "arch/Kconfig"
 
 menu "General setup"
 
+config ADV_NETBOOT
+	bool "boot from network"
+	default n
+	help
+	  boot from network.
+
 config LOCALVERSION
 	string "Local version - append to U-Boot release"
 	help
