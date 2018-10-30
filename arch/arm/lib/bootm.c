@@ -373,6 +373,12 @@ int bootz_setup(ulong image, ulong *start, ulong *end)
 {
 	struct zimage_header *zi;
 
+#ifdef CONFIG_ADV_CRC
+	ulong zimagecrc;
+	unsigned long envcrc = getenv_ulong("imageserial", 10, 0);
+	unsigned long envmmcdev = getenv_ulong("mmcdev", 10, 0);
+#endif
+
 	zi = (struct zimage_header *)map_sysmem(image, 0);
 	if (zi->zi_magic != LINUX_ARM_ZIMAGE_MAGIC) {
 		puts("Bad Linux ARM zImage magic!\n");
@@ -384,6 +390,23 @@ int bootz_setup(ulong image, ulong *start, ulong *end)
 
 	printf("Kernel image @ %#08lx [ %#08lx - %#08lx ]\n", image, *start,
 	      *end);
+
+#ifdef CONFIG_ADV_CRC
+	zimagecrc = crc32_wd(0, image, *end, CHUNKSZ_CRC32);
+//	printf("zimagecrc:0x%08lx  \n",zimagecrc);
+//	printf("envcrc:0x%08lx  \n",envcrc);
+//	printf("envmmcdev:0x%08lx  \n",envmmcdev);
+
+	if(envcrc > 0 && ( envmmcdev == 1 )) {
+		if(zimagecrc == envcrc) {
+			printf("zimage check pass \n");
+			return 0;
+		} else {
+			printf("zimage check fail \n");
+			return -1;
+		}
+	}
+#endif
 
 	return 0;
 }

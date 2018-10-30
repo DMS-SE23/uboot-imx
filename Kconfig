@@ -19,6 +19,12 @@ config ADV_NETBOOT
 	help
 	  boot from network.
 
+config ADV_CRC
+	bool "check zimgae crc"
+	default n
+	help
+	  check zimgae crc.
+
 config LOCALVERSION
 	string "Local version - append to U-Boot release"
 	help
