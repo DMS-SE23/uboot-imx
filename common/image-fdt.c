@@ -119,7 +119,11 @@ int boot_relocate_fdt(struct lmb *lmb, char **of_flat_tree, ulong *of_size)
 	ulong	of_len = 0;
 	int	err;
 	int	disable_relocation = 0;
-
+#ifdef CONFIG_ADV_CRC
+	ulong dtbcrc;
+	unsigned long envcrc = getenv_ulong("dtbserial", 10, 0);
+	unsigned long envmmcdev = getenv_ulong("mmcdev", 10, 0);
+#endif
 	/* nothing to do */
 	if (*of_size == 0)
 		return 0;
@@ -143,6 +147,22 @@ int boot_relocate_fdt(struct lmb *lmb, char **of_flat_tree, ulong *of_size)
 			of_start = fdt_blob;
 			lmb_reserve(lmb, (ulong)of_start, of_len);
 			disable_relocation = 1;
+
+#ifdef CONFIG_ADV_CRC
+	dtbcrc = crc32_wd(0, of_start, *of_size, CHUNKSZ_CRC32);
+//	printf("of_size:0x%08lx  \n",*of_size);
+//	printf("dtbcrc:0x%08lx  \n",dtbcrc);
+//	printf("envmmcdev:0x%08lx  \n",envmmcdev);
+	if((envcrc > 0 ) && ( envmmcdev == 1 )) {
+		if(dtbcrc == envcrc) {
+			printf("dtb check pass \n");
+		} else {
+			printf("dtb check fail \n");
+			goto error;
+		}
+	}
+#endif
+
 		} else if (desired_addr) {
 			of_start =
 			    (void *)(ulong) lmb_alloc_base(lmb, of_len, 0x1000,
@@ -199,6 +219,7 @@ int boot_relocate_fdt(struct lmb *lmb, char **of_flat_tree, ulong *of_size)
 error:
 	return 1;
 }
+
 
 /**
  * boot_get_fdt - main fdt handling routine
